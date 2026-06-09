@@ -17,7 +17,7 @@ from auth import auth_manager
 from backup import backup_manager
 from encryption import encryption_manager
 from logger import app_logger, LOG_FILE
-from password_manager import password_manager, PASSWORDS_FILE
+from password_manager import password_manager as pwd_manager, PASSWORDS_FILE
 from utils import (
     analyze_password_strength,
     compute_statistics,
@@ -188,7 +188,7 @@ class PasswordManagerApp:
         """Самодиагностика файлов при запуске."""
         encryption_manager.ensure_key_file()
         auth_manager.ensure_master_hash_file()
-        password_manager.ensure_passwords_file()
+        pwd_manager.ensure_passwords_file()
 
         warnings = run_self_diagnostics(
             PASSWORDS_FILE,
@@ -317,11 +317,11 @@ class PasswordManagerApp:
 
                 if success:
                     result["success"] = True
-                    password_manager.set_authenticated(True)
-                    load_ok, load_msg = password_manager.load_records()
+                    pwd_manager.set_authenticated(True)
+                    load_ok, load_msg = pwd_manager.load_records()
                     if not load_ok:
                         status_label.config(text=load_msg)
-                        password_manager.set_authenticated(False)
+                        pwd_manager.set_authenticated(False)
                         return
                     if first_run:
                         app_logger.log(
@@ -364,7 +364,7 @@ class PasswordManagerApp:
     def _lock_application(self) -> None:
         """Автоблокировка после 5 минут бездействия."""
         app_logger.log(app_logger.EVENT_AUTO_LOCK, "Автоблокировка: требуется повторный ввод пароля")
-        password_manager.set_authenticated(False)
+        pwd_manager.set_authenticated(False)
         self._clear_form()
 
         if hasattr(self, "tree"):
@@ -572,7 +572,7 @@ class PasswordManagerApp:
         """Фильтрация таблицы по поисковому запросу."""
         try:
             query = self.search_var.get()
-            indexed_records = password_manager.search_by_site(query)
+            indexed_records = pwd_manager.search_by_site(query)
             self._refresh_table(indexed_records)
         except Exception as error:
             app_logger.log_error(f"Ошибка поиска: {error}")
@@ -586,7 +586,7 @@ class PasswordManagerApp:
                 return
             storage_index = int(selection[0])
             self._selected_index = storage_index
-            records = password_manager.get_records()
+            records = pwd_manager.get_records()
             if 0 <= storage_index < len(records):
                 record = records[storage_index]
                 self.site_var.set(record["site"])
@@ -605,7 +605,7 @@ class PasswordManagerApp:
     def _save_record(self) -> None:
         """Сохранение новой записи."""
         try:
-            success, message = password_manager.add_record(
+            success, message = pwd_manager.add_record(
                 self.site_var.get(),
                 self.login_var.get(),
                 self.password_var.get(),
@@ -626,7 +626,7 @@ class PasswordManagerApp:
             if self._selected_index is None:
                 messagebox.showwarning("Внимание", "Выберите запись в таблице.")
                 return
-            success, message = password_manager.update_record(
+            success, message = pwd_manager.update_record(
                 self._selected_index,
                 self.site_var.get(),
                 self.login_var.get(),
@@ -649,7 +649,7 @@ class PasswordManagerApp:
                 return
             if not messagebox.askyesno("Подтверждение", "Удалить выбранную запись?"):
                 return
-            success, message = password_manager.delete_record(self._selected_index)
+            success, message = pwd_manager.delete_record(self._selected_index)
             if success:
                 messagebox.showinfo("Успех", "Запись удалена.")
                 self._clear_form()
@@ -663,12 +663,12 @@ class PasswordManagerApp:
     def _show_records(self) -> None:
         """Загрузка и отображение всех записей."""
         try:
-            success, message = password_manager.load_records()
+            success, message = pwd_manager.load_records()
             if not success:
                 messagebox.showerror("Ошибка", message)
                 return
             self.search_var.set("")
-            indexed = list(enumerate(password_manager.get_records()))
+            indexed = list(enumerate(pwd_manager.get_records()))
             self._refresh_table(indexed)
         except Exception as error:
             app_logger.log_error(f"Ошибка загрузки записей: {error}")
@@ -779,7 +779,7 @@ class PasswordManagerApp:
                 return
             success, message = backup_manager.restore_backup(filepath)
             if success:
-                password_manager.load_records()
+                pwd_manager.load_records()
                 self._on_search()
                 messagebox.showinfo("Успех", message)
             else:
@@ -797,7 +797,7 @@ class PasswordManagerApp:
             from reportlab.pdfgen import canvas
 
             os.makedirs(EXPORTS_DIR, exist_ok=True)
-            records = password_manager.get_records()
+            records = pwd_manager.get_records()
             stats = compute_statistics(records)
             timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M")
             filepath = os.path.join(EXPORTS_DIR, f"report_{timestamp}.pdf")
@@ -942,7 +942,7 @@ class PasswordManagerApp:
    Политики безопасности, инструкции, разграничение прав, обучение персонала.
    Регламентирует работу с конфиденциальной информацией.
 
-5. Законодительная защита
+5. Законодательная защита
    ФЗ «О персональных данных», GDPR, уголовная ответственность за утечки.
    Правовые механизмы защиты информации.
 
