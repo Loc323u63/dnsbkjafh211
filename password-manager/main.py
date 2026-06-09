@@ -1,8 +1,8 @@
 """
-Главный модуль приложения «Менеджер паролей».
+Главный модуль приложения «Менеджер паролей» — УПРОЩЁННАЯ ВЕРСИЯ.
 
+Упрощённый подход к отрисовке без сложной архитектуры.
 Точка входа: авторизация, главное окно, все функции GUI.
-Демонстрирует принципы программной защиты информации.
 """
 
 import os
@@ -60,177 +60,43 @@ class PasswordManagerApp:
     def __init__(self) -> None:
         """Инициализация приложения и запуск самодиагностики."""
         try:
+            print("DEBUG: Инициализация PasswordManagerApp")
             app_logger.log("ИНИЦИАЛИЗАЦИЯ", "=== НАЧАЛО ИНИЦИАЛИЗАЦИИ ПРИЛОЖЕНИЯ ===")
             
+            # Создаём корневое окно СРАЗУ
             self.root = tk.Tk()
+            print("DEBUG: Tkinter Tk() создан успешно")
             app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Tkinter корень создан")
             
+            # Минимальная настройка окна
             self.root.title("Менеджер паролей — Защита информации")
-            self.root.geometry("900x600")
+            self.root.geometry("1000x650")
             self.root.minsize(800, 500)
-            self.root.configure(bg=COLORS["bg"])
-            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Окно настроено (900x600)")
+            
+            print("DEBUG: Базовые свойства окна установлены")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Окно настроено (1000x650)")
 
+            # Инициализируем переменные
             self._selected_index: Optional[int] = None
             self._auto_lock_job: Optional[str] = None
-            self._lockout_update_job: Optional[str] = None
             self._activity_bound = False
-
-            self._setup_styles()
-            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Стили настроены")
             
-            self._run_startup_diagnostics()
-            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Самодиагностика пройдена")
+            # Флаг для безопасности
+            self._is_closing = False
 
-            app_logger.log(app_logger.EVENT_START, "Запуск приложения «Менеджер паролей»")
-            app_logger.ensure_log_file()
-            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "=== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА ===")
+            # Диагностика - БЕЗ UI
+            print("DEBUG: Запуск диагностики...")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "=== НАЧАЛО ДИАГНОСТИКИ ===")
             
-        except Exception as error:
-            app_logger.log_error(f"КРИТИЧЕСКАЯ ОШИБКА ИНИЦИАЛИЗАЦИИ: {error}")
-            app_logger.log_error(f"Тип ошибки: {type(error).__name__}")
-            import traceback
-            app_logger.log_error(f"Трассировка: {traceback.format_exc()}")
-            raise
-
-    def _setup_styles(self) -> None:
-        """Настройка ttk-стилей для современного тёмного интерфейса."""
-        try:
-            style = ttk.Style()
-            try:
-                style.theme_use("clam")
-            except tk.TclError:
-                pass
-
-            style.configure(
-                "Dark.TFrame",
-                background=COLORS["bg"],
-            )
-            style.configure(
-                "Dark.TLabel",
-                background=COLORS["bg"],
-                foreground=COLORS["fg"],
-                font=("Segoe UI", 10),
-            )
-            style.configure(
-                "Header.TLabel",
-                background=COLORS["bg"],
-                foreground=COLORS["header"],
-                font=("Segoe UI", 14, "bold"),
-            )
-            style.configure(
-                "Dark.TButton",
-                background=COLORS["button_bg"],
-                foreground=COLORS["button_fg"],
-                font=("Segoe UI", 9),
-                padding=6,
-            )
-            style.map(
-                "Dark.TButton",
-                background=[("active", COLORS["accent"])],
-                foreground=[("active", "#1e1e2e")],
-            )
-            style.configure(
-                "Dark.TEntry",
-                fieldbackground=COLORS["entry_bg"],
-                foreground=COLORS["fg"],
-                insertcolor=COLORS["fg"],
-            )
-            style.configure(
-                "Dark.Treeview",
-                background=COLORS["tree_bg"],
-                foreground=COLORS["tree_fg"],
-                fieldbackground=COLORS["tree_bg"],
-                rowheight=28,
-                font=("Segoe UI", 9),
-            )
-            style.configure(
-                "Dark.Treeview.Heading",
-                background=COLORS["button_bg"],
-                foreground=COLORS["accent"],
-                font=("Segoe UI", 9, "bold"),
-            )
-            style.configure(
-                "Dark.Horizontal.TProgressbar",
-                troughcolor=COLORS["entry_bg"],
-                background=COLORS["accent"],
-            )
-            style.configure(
-                "Status.TLabel",
-                background=COLORS["bg"],
-                foreground=COLORS["weak"],
-                font=("Segoe UI", 10),
-            )
-            style.configure(
-                "Recommend.TLabel",
-                background=COLORS["bg"],
-                foreground=COLORS["medium"],
-                font=("Segoe UI", 9),
-            )
-            style.configure(
-                "StrengthWeak.TLabel",
-                background=COLORS["bg"],
-                foreground=COLORS["weak"],
-                font=("Segoe UI", 10),
-            )
-            style.configure(
-                "StrengthMedium.TLabel",
-                background=COLORS["bg"],
-                foreground=COLORS["medium"],
-                font=("Segoe UI", 10),
-            )
-            style.configure(
-                "StrengthStrong.TLabel",
-                background=COLORS["bg"],
-                foreground=COLORS["strong"],
-                font=("Segoe UI", 10),
-            )
-        except Exception as error:
-            app_logger.log_error(f"Ошибка настройки стилей: {error}")
-            raise
-
-    def _safe_destroy_root(self) -> None:
-        """Безопасно закрывает главное окно, если оно ещё существует."""
-        try:
-            app_logger.log("ЗАКРЫТИЕ", "Попытка безопасного закрытия окна")
-            if self.root.winfo_exists():
-                app_logger.log("ЗАКРЫТИЕ", "Окно существует, вызов destroy()")
-                self.root.destroy()
-                app_logger.log("ЗАКРЫТИЕ", "✓ Окно закрыто успешно")
-            else:
-                app_logger.log("ЗАКРЫТИЕ", "Окно уже не существует")
-        except tk.TclError as error:
-            app_logger.log_error(f"Ошибка закрытия окна (TclError): {error}")
-        except Exception as error:
-            app_logger.log_error(f"Ошибка закрытия окна: {error}")
-
-    def _setup_activity_tracking(self) -> None:
-        """Включает отслеживание активности для автоблокировки после входа."""
-        if self._activity_bound:
-            return
-        self.root.bind_all("<Key>", self._reset_activity, add="+")
-        self.root.bind_all("<Button>", self._reset_activity, add="+")
-        self._activity_bound = True
-        app_logger.log("АКТИВНОСТЬ", "Отслеживание активности включено")
-
-    def _run_startup_diagnostics(self) -> None:
-        """Самодиагностика файлов при запуске."""
-        try:
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "=== НАЧАЛО ДИАГНОСТИКИ ===")
-            
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "Проверка ключа шифрования...")
             encryption_manager.ensure_key_file()
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "✓ Ключ шифрования проверен")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Ключ шифрования проверен")
             
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "Проверка хеша мастер-пароля...")
             auth_manager.ensure_master_hash_file()
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "✓ Хеш мастер-пароля проверен")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Хеш мастер-пароля проверен")
             
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "Проверка файла паролей...")
             pwd_manager.ensure_passwords_file()
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "✓ Файл паролей проверен")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Файл паролей проверен")
 
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "Запуск расширенной диагностики...")
             warnings = run_self_diagnostics(
                 PASSWORDS_FILE,
                 MASTER_HASH_FILE,
@@ -239,592 +105,599 @@ class PasswordManagerApp:
             )
             
             if warnings:
-                app_logger.log("ДИАГНОСТИКА_ЗАПУСК", f"⚠ Найдено {len(warnings)} предупреждение(й)")
-                for warning in warnings:
-                    app_logger.log("ДИАГНОСТИКА_ПРЕДУПРЕЖДЕНИЕ", warning)
+                app_logger.log("ИНИЦИАЛИЗАЦИЯ", f"⚠ Найдено {len(warnings)} предупреждение(й)")
             else:
-                app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "✓ Предупреждений не обнаружено")
-            
-            app_logger.log("ДИАГНОСТИКА_ЗАПУСК", "=== ДИАГНОСТИКА ЗАВЕРШЕНА ===")
-            
-            return warnings
-        except Exception as error:
-            app_logger.log_error(f"Ошибка диагностики: {error}")
-            import traceback
-            app_logger.log_error(f"Трассировка: {traceback.format_exc()}")
-            return []
+                app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Предупреждений не обнаружено")
 
-    def _reset_activity(self, _event: Any = None) -> None:
-        """Сбрасывает таймер бездействия при активности пользователя."""
-        if hasattr(self, "_schedule_auto_lock"):
-            self._schedule_auto_lock()
-
-    def run(self) -> None:
-        """Запуск приложения: сначала авторизация, затем главное окно."""
-        try:
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "=== ЗАПУСК ГЛАВНОГО ЦИКЛА ===")
-            
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "Скрытие главного окна...")
-            self.root.withdraw()
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "✓ Окно скрыто")
-            
-            first_run = auth_manager.is_first_run()
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", f"Первый запуск: {first_run}")
-            
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "Показ диалога авторизации...")
-            auth_success = self._show_auth_dialog(first_run=first_run)
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", f"Результат авторизации: {auth_success}")
-            
-            if not auth_success:
-                app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "Авторизация отменена, закрытие приложения")
-                self._safe_destroy_root()
-                return
-            
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "Построение главного окна...")
-            self._build_main_window()
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "✓ Главное окно построено")
-            
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "Отображение окна...")
-            self.root.deiconify()
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "✓ Окно отображено")
-            
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "Настройка отслеживания активности...")
-            self._setup_activity_tracking()
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "✓ Отслеживание настроено")
-            
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "Планирование автоблокировки...")
-            self._schedule_auto_lock()
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "✓ Автоблокировка запланирована")
-            
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "=== ЗАПУСК ОСНОВНОГО ЦИКЛА СОБЫТИЯ ===")
-            self.root.mainloop()
-            app_logger.log("ЗАПУСК_ПРИЛОЖЕНИЯ", "=== ОСНОВНОЙ ЦИКЛ ЗАВЕРШЕН ===")
+            print("DEBUG: Диагностика завершена")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "=== ДИАГНОСТИКА ЗАВЕРШЕНА ===")
+            app_logger.log(app_logger.EVENT_START, "Запуск приложения «Менеджер паролей»")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "=== ИНИЦИАЛИЗАЦИЯ ЗАВЕРШЕНА ===")
+            print("DEBUG: PasswordManagerApp инициализирована успешно")
             
         except Exception as error:
-            app_logger.log_error(f"Критическая ошибка в run(): {error}")
+            print(f"DEBUG: КРИТИЧЕСКАЯ ОШИБКА в __init__: {error}")
+            app_logger.log_error(f"КРИТИЧЕСКАЯ ОШИБКА ИНИЦИАЛИЗАЦИИ: {error}")
             app_logger.log_error(f"Тип ошибки: {type(error).__name__}")
-            import traceback
-            app_logger.log_error(f"Трассировка: {traceback.format_exc()}")
-            try:
-                if self.root.winfo_exists():
-                    messagebox.showerror("Ошибка", f"Произошла ошибка: {error}")
-            except tk.TclError:
-                pass
-            self._safe_destroy_root()
-
-    # ------------------------------------------------------------------ Auth
-    def _show_auth_dialog(self, first_run: bool = False, auto_lock: bool = False) -> bool:
-        """
-        Окно авторизации / создания мастер-пароля.
-
-        :return: True если пользователь успешно авторизован
-        """
-        try:
-            app_logger.log("ДИАЛОГ_AUTH", f"Открытие диалога авторизации (first_run={first_run})")
-            
-            auth_window = tk.Toplevel(self.root)
-            auth_window.title("Авторизация — Менеджер паролей")
-            auth_window.geometry("440x360" if first_run else "440x280")
-            auth_window.configure(bg=COLORS["bg"])
-            auth_window.resizable(False, False)
-            auth_window.transient(self.root)
-            auth_window.grab_set()
-            app_logger.log("ДИАЛОГ_AUTH", "✓ Окно авторизации создано")
-
-            result = {"success": False, "cancelled": False}
-
-            frame = ttk.Frame(auth_window, style="Dark.TFrame", padding=20)
-            frame.pack(fill=tk.BOTH, expand=True)
-
-            title = "Создание мастер-пароля" if first_run else "Вход в систему"
-            ttk.Label(frame, text=title, style="Header.TLabel").pack(pady=(0, 15))
-
-            if first_run:
-                ttk.Label(
-                    frame,
-                    text="При первом запуске задайте мастер-пароль.\n"
-                         "Он хранится только в виде SHA-256 хеша.\n"
-                         "Нажмите Enter или кнопку «Создать».",
-                    style="Dark.TLabel",
-                    wraplength=380,
-                ).pack(pady=(0, 10))
-
-            ttk.Label(frame, text="Мастер-пароль:", style="Dark.TLabel").pack(anchor=tk.W)
-            password_var = tk.StringVar()
-            password_entry = ttk.Entry(frame, textvariable=password_var, show="•", width=40)
-            password_entry.pack(pady=5, fill=tk.X)
-
-            confirm_entry = None
-            if first_run:
-                ttk.Label(frame, text="Подтверждение:", style="Dark.TLabel").pack(anchor=tk.W, pady=(10, 0))
-                confirm_var = tk.StringVar()
-                confirm_entry = ttk.Entry(frame, textvariable=confirm_var, show="•", width=40)
-                confirm_entry.pack(pady=5, fill=tk.X)
-            else:
-                confirm_var = None
-
-            status_label = ttk.Label(frame, text="", style="Status.TLabel")
-            status_label.pack(pady=5)
-
-            def update_lockout_label() -> None:
-                """Обновляет сообщение о блокировке каждую секунду."""
-                if auth_manager.is_locked_out():
-                    remaining = auth_manager.get_lockout_remaining()
-                    status_label.config(text=f"Заблокировано. Осталось: {remaining} сек.")
-                    auth_window.after(1000, update_lockout_label)
-                else:
-                    status_label.config(text="")
-
-            if auth_manager.is_locked_out():
-                update_lockout_label()
-
-            def on_submit(_event: Any = None) -> None:
-                try:
-                    password = password_var.get()
-
-                    if first_run:
-                        confirm = confirm_var.get() if confirm_var else ""
-                        if not password:
-                            status_label.config(text="Введите мастер-пароль.")
-                            return
-                        if not confirm:
-                            status_label.config(text="Подтвердите мастер-пароль.")
-                            return
-                        if password != confirm:
-                            status_label.config(text="Пароли не совпадают.")
-                            return
-                        success, msg = auth_manager.create_master_password(password)
-                    else:
-                        if auth_manager.is_locked_out():
-                            status_label.config(text=f"Подождите {auth_manager.get_lockout_remaining()} сек.")
-                            return
-                        if not password:
-                            status_label.config(text="Введите мастер-пароль.")
-                            return
-                        success, msg = auth_manager.verify_password(password)
-
-                    if success:
-                        result["success"] = True
-                        pwd_manager.set_authenticated(True)
-                        load_ok, load_msg = pwd_manager.load_records()
-                        if not load_ok:
-                            status_label.config(text=load_msg)
-                            pwd_manager.set_authenticated(False)
-                            return
-                        if first_run:
-                            app_logger.log(
-                                app_logger.EVENT_LOGIN_SUCCESS,
-                                "Первичная настройка: мастер-пароль создан",
-                            )
-                        auth_window.grab_release()
-                        auth_window.destroy()
-                    else:
-                        status_label.config(text=msg)
-                        if auth_manager.is_locked_out():
-                            update_lockout_label()
-                except Exception as error:
-                    app_logger.log_error(f"Ошибка авторизации: {error}")
-                    status_label.config(text=f"Ошибка авторизации: {error}")
-
-            def on_cancel() -> None:
-                result["cancelled"] = True
-                auth_window.grab_release()
-                auth_window.destroy()
-
-            btn_frame = ttk.Frame(frame, style="Dark.TFrame")
-            btn_frame.pack(pady=15)
-            submit_text = "Создать" if first_run else "Войти"
-            submit_btn = ttk.Button(btn_frame, text=submit_text, style="Dark.TButton", command=on_submit)
-            submit_btn.pack(side=tk.LEFT, padx=5)
-            if not auto_lock:
-                ttk.Button(btn_frame, text="Выход", style="Dark.TButton", command=on_cancel).pack(side=tk.LEFT, padx=5)
-
-            password_entry.bind("<Return>", on_submit)
-            if confirm_entry is not None:
-                confirm_entry.bind("<Return>", on_submit)
-
-            auth_window.protocol("WM_DELETE_WINDOW", on_cancel)
-            password_entry.focus_set()
-            auth_window.update_idletasks()
-            app_logger.log("ДИАЛОГ_AUTH", "Ожидание действия пользователя...")
-            self.root.wait_window(auth_window)
-            app_logger.log("ДИАЛОГ_AUTH", f"Результат: success={result['success']}, cancelled={result['cancelled']}")
-            return result["success"]
-        except Exception as error:
-            app_logger.log_error(f"Ошибка в _show_auth_dialog: {error}")
-            import traceback
-            app_logger.log_error(f"Трассировка: {traceback.format_exc()}")
-            return False
-
-    def _lock_application(self) -> None:
-        """Автоблокировка после 5 минут бездействия."""
-        app_logger.log(app_logger.EVENT_AUTO_LOCK, "Автоблокировка: требуется повторный ввод пароля")
-        pwd_manager.set_authenticated(False)
-        self._clear_form()
-
-        if hasattr(self, "tree"):
-            try:
-                self._refresh_table([])
-            except Exception:
-                pass
-
-        for widget in self.root.winfo_children():
-            widget.destroy()
-
-        if self._show_auth_dialog(auto_lock=True):
-            self._build_main_window()
-            self._schedule_auto_lock()
-        else:
-            self._safe_destroy_root()
-
-    def _schedule_auto_lock(self) -> None:
-        """Планирует проверку бездействия."""
-        if self._auto_lock_job:
-            self.root.after_cancel(self._auto_lock_job)
-        self._auto_lock_job = self.root.after(AUTO_LOCK_MS, self._lock_application)
-
-    # ---------------------------------------------------------- Main window
-    def _build_main_window(self) -> None:
-        """Построение главного окна приложения."""
-        try:
-            app_logger.log("UI_MAIN", "=== ПОСТРОЕНИЕ ГЛАВНОГО ОКНА ===")
-            
-            for widget in self.root.winfo_children():
-                widget.destroy()
-
-            main = ttk.Frame(self.root, style="Dark.TFrame", padding=10)
-            main.pack(fill=tk.BOTH, expand=True)
-            app_logger.log("UI_MAIN", "✓ Основной фрейм создан")
-
-            ttk.Label(main, text="Менеджер паролей", style="Header.TLabel").pack(anchor=tk.W)
-
-            # --- Поиск ---
-            search_frame = ttk.Frame(main, style="Dark.TFrame")
-            search_frame.pack(fill=tk.X, pady=(10, 5))
-            ttk.Label(search_frame, text="Поиск по сайту:", style="Dark.TLabel").pack(side=tk.LEFT)
-            self.search_var = tk.StringVar()
-            self.search_var.trace_add("write", lambda *_: self._on_search())
-            ttk.Entry(search_frame, textvariable=self.search_var, width=30).pack(side=tk.LEFT, padx=8)
-            app_logger.log("UI_MAIN", "✓ Поиск добавлен")
-
-            # --- Форма ввода ---
-            form = ttk.LabelFrame(main, text="  Новая / редактируемая запись  ", padding=10)
-            form.pack(fill=tk.X, pady=5)
-
-            fields = ttk.Frame(form, style="Dark.TFrame")
-            fields.pack(fill=tk.X)
-
-            self.site_var = tk.StringVar()
-            self.login_var = tk.StringVar()
-            self.password_var = tk.StringVar()
-            self.password_var.trace_add("write", lambda *_: self._update_strength_indicator())
-
-            for col, (label, var) in enumerate(
-                [("Сайт", self.site_var), ("Логин", self.login_var), ("Пароль", self.password_var)]
-            ):
-                ttk.Label(fields, text=f"{label}:", style="Dark.TLabel").grid(row=0, column=col * 2, sticky=tk.W, padx=4)
-                show = "•" if label == "Пароль" else ""
-                entry = ttk.Entry(fields, textvariable=var, width=22, show=show)
-                entry.grid(row=1, column=col * 2, padx=4, pady=2)
-
-            app_logger.log("UI_MAIN", "✓ Форма ввода добавлена")
-
-            # --- Индикатор надёжности пароля ---
-            strength_frame = ttk.Frame(form, style="Dark.TFrame")
-            strength_frame.pack(fill=tk.X, pady=(8, 0))
-            ttk.Label(strength_frame, text="Надёжность:", style="Dark.TLabel").pack(side=tk.LEFT)
-            self.strength_bar = ttk.Progressbar(strength_frame, length=200, mode="determinate", style="Dark.Horizontal.TProgressbar")
-            self.strength_bar.pack(side=tk.LEFT, padx=8)
-            self.strength_label = ttk.Label(strength_frame, text="—", style="Dark.TLabel")
-            self.strength_label.pack(side=tk.LEFT)
-            self._strength_style = "Dark.TLabel"
-            self.recommend_label = ttk.Label(form, text="", style="Recommend.TLabel", wraplength=700)
-            self.recommend_label.pack(anchor=tk.W, pady=(4, 0))
-            app_logger.log("UI_MAIN", "✓ Индикатор надёжности добавлен")
-
-            # --- Кнопки управления ---
-            btn_frame1 = ttk.Frame(main, style="Dark.TFrame")
-            btn_frame1.pack(fill=tk.X, pady=8)
-
-            buttons_row1 = [
-                ("Сохранить запись", self._save_record),
-                ("Редактировать запись", self._edit_record),
-                ("Удалить запись", self._delete_record),
-                ("Показать записи", self._show_records),
-                ("Скопировать пароль", self._copy_password),
-                ("Сгенерировать пароль", self._generate_password_dialog),
-            ]
-            for text, command in buttons_row1:
-                ttk.Button(btn_frame1, text=text, style="Dark.TButton", command=command).pack(side=tk.LEFT, padx=3, pady=2)
-
-            btn_frame2 = ttk.Frame(main, style="Dark.TFrame")
-            btn_frame2.pack(fill=tk.X, pady=2)
-
-            buttons_row2 = [
-                ("Создать резервную копию", self._create_backup),
-                ("Восстановить резервную копию", self._restore_backup),
-                ("Экспорт в PDF", self._export_pdf),
-                ("QR-код записи", self._show_qr_code),
-                ("История действий", self._show_history),
-                ("Информация о защите данных", self._show_protection_info),
-            ]
-            for text, command in buttons_row2:
-                ttk.Button(btn_frame2, text=text, style="Dark.TButton", command=command).pack(side=tk.LEFT, padx=3, pady=2)
-            
-            app_logger.log("UI_MAIN", "✓ Кнопки добавлены (12 шт)")
-
-            # --- Таблица записей ---
-            table_frame = ttk.Frame(main, style="Dark.TFrame")
-            table_frame.pack(fill=tk.BOTH, expand=True, pady=5)
-
-            columns = ("site", "login", "password", "created_at")
-            self.tree = ttk.Treeview(table_frame, columns=columns, show="headings", style="Dark.Treeview")
-            self.tree.heading("site", text="Сайт")
-            self.tree.heading("login", text="Логин")
-            self.tree.heading("password", text="Пароль")
-            self.tree.heading("created_at", text="Дата создания")
-            self.tree.column("site", width=160)
-            self.tree.column("login", width=160)
-            self.tree.column("password", width=160)
-            self.tree.column("created_at", width=140)
-
-            scrollbar = ttk.Scrollbar(table_frame, orient=tk.VERTICAL, command=self.tree.yview)
-            self.tree.configure(yscrollcommand=scrollbar.set)
-            self.tree.pack(side=tk.LEFT, fill=tk.BOTH, expand=True)
-            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
-            self.tree.bind("<<TreeviewSelect>>", self._on_tree_select)
-            app_logger.log("UI_MAIN", "✓ Таблица добавлена")
-
-            # --- Статистика ---
-            stats_frame = ttk.LabelFrame(main, text="  Статистика безопасности  ", padding=8)
-            stats_frame.pack(fill=tk.X, pady=5)
-            self.stats_label = ttk.Label(stats_frame, text="", style="Dark.TLabel")
-            self.stats_label.pack(anchor=tk.W)
-            app_logger.log("UI_MAIN", "✓ Статистика добавлена")
-
-            self._show_records()
-            app_logger.log("UI_MAIN", "=== ГЛАВНОЕ ОКНО ПОСТРОЕНО ===")
-            
-        except Exception as error:
-            app_logger.log_error(f"Ошибка построения главного окна: {error}")
             import traceback
             app_logger.log_error(f"Трассировка: {traceback.format_exc()}")
             raise
 
-    def _set_strength_label(self, text: str, level: str = "default") -> None:
-        """Обновляет текст и цвет индикатора надёжности через ttk-стили."""
-        style_map = {
-            "default": "Dark.TLabel",
-            "слабый": "StrengthWeak.TLabel",
-            "средний": "StrengthMedium.TLabel",
-            "сильный": "StrengthStrong.TLabel",
-        }
-        new_style = style_map.get(level, "Dark.TLabel")
-        if new_style != self._strength_style:
-            self.strength_label.configure(style=new_style)
-            self._strength_style = new_style
-        self.strength_label.config(text=text)
-
-    def _update_strength_indicator(self) -> None:
-        """Обновляет индикатор надёжности пароля в форме."""
+    def run(self) -> None:
+        """Главный цикл приложения."""
         try:
-            if not hasattr(self, "strength_bar"):
+            print("DEBUG: Начало run()")
+            app_logger.log("ЗАПУСК", "=== НАЧАЛО run() ===")
+            
+            # Проверяем первый запуск
+            first_run = auth_manager.is_first_run()
+            print(f"DEBUG: first_run = {first_run}")
+            app_logger.log("ЗАПУСК", f"Первый запуск: {first_run}")
+            
+            # АВТОРИЗАЦИЯ
+            print("DEBUG: Показываем диалог авторизации")
+            app_logger.log("ЗАПУСК", "Показ диалога авторизации...")
+            
+            if not self._show_auth_dialog(first_run=first_run):
+                print("DEBUG: Авторизация отменена")
+                app_logger.log("ЗАПУСК", "Авторизация отменена пользователем")
+                self._safe_close()
                 return
-
-            password = self.password_var.get()
-            if not password:
-                self.strength_bar["value"] = 0
-                self._set_strength_label("—")
-                self.recommend_label.config(text="")
-                return
-
-            score, level, recommendations = analyze_password_strength(password)
-            self.strength_bar["value"] = score
-            self._set_strength_label(f"{score}/100 — {level}", level)
-
-            if recommendations:
-                self.recommend_label.config(text="Рекомендации: " + "; ".join(recommendations))
-            else:
-                self.recommend_label.config(text="")
+            
+            print("DEBUG: Авторизация успешна")
+            app_logger.log("ЗАПУСК", "✓ Авторизация успешна")
+            
+            # ПОСТРОЕНИЕ UI
+            print("DEBUG: Построение главного окна")
+            app_logger.log("ЗАПУСК", "Построение главного окна...")
+            self._build_main_window()
+            print("DEBUG: Главное окно построено")
+            app_logger.log("ЗАПУСК", "✓ Главное окно построено")
+            
+            # ПОКАЗЫВАЕМ ОКНО
+            print("DEBUG: Показываем окно (update + deiconify)")
+            self.root.update_idletasks()
+            self.root.deiconify()
+            print("DEBUG: Окно видимо")
+            app_logger.log("ЗАПУСК", "✓ Окно отображено")
+            
+            # Отслеживание активности
+            self._setup_activity_tracking()
+            self._schedule_auto_lock()
+            
+            print("DEBUG: Начало mainloop()")
+            app_logger.log("ЗАПУСК", "=== НАЧАЛО ОСНОВНОГО ЦИКЛА СОБЫТИЯ ===")
+            
+            # ГЛАВНЫЙ ЦИКЛ
+            self.root.mainloop()
+            
+            print("DEBUG: mainloop() завершён")
+            app_logger.log("ЗАПУСК", "=== ОСНОВНОЙ ЦИКЛ ЗАВЕРШЕН ===")
+            
         except Exception as error:
-            app_logger.log_error(f"Ошибка индикатора надёжности: {error}")
+            print(f"DEBUG: ОШИБКА в run(): {error}")
+            app_logger.log_error(f"Критическая ошибка в run(): {error}")
+            import traceback
+            app_logger.log_error(f"Трассировка: {traceback.format_exc()}")
+            self._safe_close()
 
-    def _refresh_table(self, indexed_records: list[tuple[int, dict[str, Any]]]) -> None:
-        """Обновляет содержимое таблицы."""
+    def _safe_close(self) -> None:
+        """Безопасное закрытие приложения."""
+        if self._is_closing:
+            return
+        self._is_closing = True
         try:
-            for item in self.tree.get_children():
-                self.tree.delete(item)
-            for storage_index, record in indexed_records:
-                self.tree.insert(
-                    "",
-                    tk.END,
-                    iid=str(storage_index),
-                    values=(
-                        record["site"],
-                        record["login"],
-                        record["password"],
-                        record["created_at"],
-                    ),
-                )
-            records = [record for _, record in indexed_records]
-            self._update_statistics(records)
-        except Exception as error:
-            app_logger.log_error(f"Ошибка обновления таблицы: {error}")
+            if self.root.winfo_exists():
+                self.root.destroy()
+        except Exception:
+            pass
 
-    def _update_statistics(self, records: list[dict[str, Any]]) -> None:
-        """Обновляет блок статистики."""
+    def _setup_activity_tracking(self) -> None:
+        """Отслеживание активности."""
+        if self._activity_bound:
+            return
+        self.root.bind_all("<Key>", lambda e: self._schedule_auto_lock(), add="+")
+        self.root.bind_all("<Button>", lambda e: self._schedule_auto_lock(), add="+")
+        self._activity_bound = True
+
+    def _schedule_auto_lock(self) -> None:
+        """Перепланирование автоблокировки."""
+        if self._auto_lock_job:
+            self.root.after_cancel(self._auto_lock_job)
+        self._auto_lock_job = self.root.after(AUTO_LOCK_MS, self._lock_application)
+
+    def _lock_application(self) -> None:
+        """Автоблокировка."""
+        app_logger.log(app_logger.EVENT_AUTO_LOCK, "Автоблокировка")
+        pwd_manager.set_authenticated(False)
+        
+        for widget in self.root.winfo_children():
+            widget.destroy()
+        
+        if self._show_auth_dialog(auto_lock=True):
+            self._build_main_window()
+            self._schedule_auto_lock()
+        else:
+            self._safe_close()
+
+    # ================================================================ AUTH
+    def _show_auth_dialog(self, first_run: bool = False, auto_lock: bool = False) -> bool:
+        """Диалог авторизации."""
+        try:
+            print(f"DEBUG: Открытие диалога авторизации (first_run={first_run})")
+            
+            auth_window = tk.Toplevel(self.root)
+            auth_window.title("Авторизация — Менеджер паролей")
+            auth_window.geometry("440x360" if first_run else "440x280")
+            auth_window.resizable(False, False)
+            auth_window.transient(self.root)
+            auth_window.grab_set()
+
+            result = {"success": False}
+
+            # Простой фрейм без стилей
+            frame = tk.Frame(auth_window, bg=COLORS["bg"])
+            frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
+
+            # Заголовок
+            title = tk.Label(
+                frame,
+                text="Создание мастер-пароля" if first_run else "Вход в систему",
+                font=("Arial", 14, "bold"),
+                bg=COLORS["bg"],
+                fg=COLORS["header"],
+            )
+            title.pack(pady=(0, 15))
+
+            if first_run:
+                tk.Label(
+                    frame,
+                    text="При первом запуске задайте мастер-пароль.\n"
+                         "Он хранится только в виде SHA-256 хеша.",
+                    font=("Arial", 10),
+                    bg=COLORS["bg"],
+                    fg=COLORS["fg"],
+                    wraplength=350,
+                ).pack(pady=(0, 15))
+
+            # Пароль
+            tk.Label(frame, text="Мастер-пароль:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(anchor=tk.W)
+            password_var = tk.StringVar()
+            password_entry = tk.Entry(frame, textvariable=password_var, show="•", width=40, bg=COLORS["entry_bg"], fg=COLORS["fg"], insertbackground=COLORS["fg"])
+            password_entry.pack(pady=5, fill=tk.X)
+
+            # Подтверждение
+            confirm_var = None
+            confirm_entry = None
+            if first_run:
+                tk.Label(frame, text="Подтверждение:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(anchor=tk.W, pady=(10, 0))
+                confirm_var = tk.StringVar()
+                confirm_entry = tk.Entry(frame, textvariable=confirm_var, show="•", width=40, bg=COLORS["entry_bg"], fg=COLORS["fg"], insertbackground=COLORS["fg"])
+                confirm_entry.pack(pady=5, fill=tk.X)
+
+            # Статус
+            status_label = tk.Label(frame, text="", bg=COLORS["bg"], fg=COLORS["weak"], font=("Arial", 9))
+            status_label.pack(pady=5)
+
+            def update_lockout() -> None:
+                if auth_manager.is_locked_out():
+                    remaining = auth_manager.get_lockout_remaining()
+                    status_label.config(text=f"Заблокировано. Осталось: {remaining} сек.")
+                    auth_window.after(1000, update_lockout)
+
+            if auth_manager.is_locked_out():
+                update_lockout()
+
+            def on_submit() -> None:
+                password = password_var.get()
+
+                if first_run:
+                    confirm = confirm_var.get() if confirm_var else ""
+                    if password != confirm:
+                        status_label.config(text="Пароли не совпадают")
+                        return
+                    success, msg = auth_manager.create_master_password(password)
+                else:
+                    if auth_manager.is_locked_out():
+                        status_label.config(text=f"Подождите {auth_manager.get_lockout_remaining()} сек")
+                        return
+                    success, msg = auth_manager.verify_password(password)
+
+                if success:
+                    result["success"] = True
+                    pwd_manager.set_authenticated(True)
+                    pwd_manager.load_records()
+                    auth_window.destroy()
+                else:
+                    status_label.config(text=msg)
+
+            # Кнопки
+            btn_frame = tk.Frame(frame, bg=COLORS["bg"])
+            btn_frame.pack(pady=15)
+            
+            submit_btn = tk.Button(
+                btn_frame,
+                text="Создать" if first_run else "Войти",
+                command=on_submit,
+                bg=COLORS["button_bg"],
+                fg=COLORS["button_fg"],
+                padx=15,
+                pady=5,
+            )
+            submit_btn.pack(side=tk.LEFT, padx=5)
+            
+            if not auto_lock:
+                tk.Button(
+                    btn_frame,
+                    text="Выход",
+                    command=auth_window.destroy,
+                    bg=COLORS["button_bg"],
+                    fg=COLORS["button_fg"],
+                    padx=15,
+                    pady=5,
+                ).pack(side=tk.LEFT, padx=5)
+
+            password_entry.bind("<Return>", lambda e: on_submit())
+            if confirm_entry:
+                confirm_entry.bind("<Return>", lambda e: on_submit())
+
+            password_entry.focus()
+            
+            print("DEBUG: Диалог авторизации ожидает действия")
+            self.root.wait_window(auth_window)
+            
+            print(f"DEBUG: Результат авторизации: {result['success']}")
+            return result["success"]
+            
+        except Exception as error:
+            print(f"DEBUG: Ошибка в диалоге авторизации: {error}")
+            app_logger.log_error(f"Ошибка в диалоге авторизации: {error}")
+            return False
+
+    # ================================================================ UI
+    def _build_main_window(self) -> None:
+        """Построение главного окна - МАКСИМАЛЬНО ПРОСТО."""
+        try:
+            print("DEBUG: _build_main_window() начало")
+            
+            # Очищаем окно
+            for widget in self.root.winfo_children():
+                widget.destroy()
+            
+            # Главный контейнер
+            main = tk.Frame(self.root, bg=COLORS["bg"])
+            main.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+            
+            # Заголовок
+            title = tk.Label(main, text="Менеджер паролей", font=("Arial", 16, "bold"), bg=COLORS["bg"], fg=COLORS["header"])
+            title.pack(anchor=tk.W, pady=(0, 10))
+            
+            # ========== ПОИСК ==========
+            search_frame = tk.Frame(main, bg=COLORS["bg"])
+            search_frame.pack(fill=tk.X, pady=(0, 10))
+            tk.Label(search_frame, text="Поиск:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(side=tk.LEFT)
+            self.search_var = tk.StringVar()
+            self.search_var.trace_add("write", lambda *_: self._on_search())
+            search_entry = tk.Entry(search_frame, textvariable=self.search_var, width=30, bg=COLORS["entry_bg"], fg=COLORS["fg"])
+            search_entry.pack(side=tk.LEFT, padx=10)
+            
+            # ========== ФОРМА ==========
+            form_frame = tk.LabelFrame(main, text=" Запись ", bg=COLORS["bg"], fg=COLORS["header"], font=("Arial", 10, "bold"))
+            form_frame.pack(fill=tk.X, pady=10)
+            
+            # Поля ввода
+            self.site_var = tk.StringVar()
+            self.login_var = tk.StringVar()
+            self.password_var = tk.StringVar()
+            self.password_var.trace_add("write", lambda *_: self._update_strength())
+            
+            # Сайт
+            tk.Label(form_frame, text="Сайт:", bg=COLORS["bg"], fg=COLORS["fg"]).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
+            tk.Entry(form_frame, textvariable=self.site_var, width=25, bg=COLORS["entry_bg"], fg=COLORS["fg"]).grid(row=0, column=1, padx=5, pady=5)
+            
+            # Логин
+            tk.Label(form_frame, text="Логин:", bg=COLORS["bg"], fg=COLORS["fg"]).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
+            tk.Entry(form_frame, textvariable=self.login_var, width=25, bg=COLORS["entry_bg"], fg=COLORS["fg"]).grid(row=0, column=3, padx=5, pady=5)
+            
+            # Пароль
+            tk.Label(form_frame, text="Пароль:", bg=COLORS["bg"], fg=COLORS["fg"]).grid(row=0, column=4, sticky=tk.W, padx=5, pady=5)
+            tk.Entry(form_frame, textvariable=self.password_var, width=25, show="•", bg=COLORS["entry_bg"], fg=COLORS["fg"]).grid(row=0, column=5, padx=5, pady=5)
+            
+            # Индикатор надёжности
+            strength_frame = tk.Frame(form_frame, bg=COLORS["bg"])
+            strength_frame.grid(row=1, column=0, columnspan=6, sticky=tk.W, padx=5, pady=5)
+            tk.Label(strength_frame, text="Надёжность:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(side=tk.LEFT)
+            self.strength_bar = tk.Canvas(strength_frame, width=200, height=20, bg=COLORS["entry_bg"], highlightthickness=0)
+            self.strength_bar.pack(side=tk.LEFT, padx=10)
+            self.strength_label = tk.Label(strength_frame, text="—", bg=COLORS["bg"], fg=COLORS["fg"])
+            self.strength_label.pack(side=tk.LEFT)
+            
+            # Рекомендации
+            self.recommend_label = tk.Label(form_frame, text="", bg=COLORS["bg"], fg=COLORS["medium"], font=("Arial", 9), wraplength=700, justify=tk.LEFT)
+            self.recommend_label.grid(row=2, column=0, columnspan=6, sticky=tk.W, padx=5, pady=5)
+            
+            # ========== КНОПКИ ==========
+            btn_frame1 = tk.Frame(main, bg=COLORS["bg"])
+            btn_frame1.pack(fill=tk.X, pady=10)
+            
+            buttons1 = [
+                ("Сохранить", self._save_record),
+                ("Редактировать", self._edit_record),
+                ("Удалить", self._delete_record),
+                ("Показать все", self._show_records),
+                ("Копировать пароль", self._copy_password),
+                ("Сгенерировать", self._generate_password_dialog),
+            ]
+            
+            for text, cmd in buttons1:
+                tk.Button(
+                    btn_frame1,
+                    text=text,
+                    command=cmd,
+                    bg=COLORS["button_bg"],
+                    fg=COLORS["button_fg"],
+                    padx=10,
+                    pady=5,
+                ).pack(side=tk.LEFT, padx=3)
+            
+            btn_frame2 = tk.Frame(main, bg=COLORS["bg"])
+            btn_frame2.pack(fill=tk.X, pady=5)
+            
+            buttons2 = [
+                ("Резервная копия", self._create_backup),
+                ("Восстановить", self._restore_backup),
+                ("PDF отчёт", self._export_pdf),
+                ("QR-код", self._show_qr_code),
+                ("История", self._show_history),
+                ("О защите", self._show_protection_info),
+            ]
+            
+            for text, cmd in buttons2:
+                tk.Button(
+                    btn_frame2,
+                    text=text,
+                    command=cmd,
+                    bg=COLORS["button_bg"],
+                    fg=COLORS["button_fg"],
+                    padx=10,
+                    pady=5,
+                ).pack(side=tk.LEFT, padx=3)
+            
+            # ========== ТАБЛИЦА ==========
+            table_frame = tk.Frame(main, bg=COLORS["bg"])
+            table_frame.pack(fill=tk.BOTH, expand=True, pady=10)
+            
+            columns = ("Сайт", "Логин", "Пароль", "Дата создания")
+            self.tree = tk.Frame(table_frame, bg=COLORS["tree_bg"])
+            self.tree.pack(fill=tk.BOTH, expand=True)
+            
+            # Используем Listbox вместо Treeview для простоты
+            scrollbar = tk.Scrollbar(table_frame)
+            scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+            
+            self.listbox = tk.Listbox(
+                table_frame,
+                bg=COLORS["tree_bg"],
+                fg=COLORS["tree_fg"],
+                yscrollcommand=scrollbar.set,
+                font=("Arial", 9),
+                height=10,
+            )
+            self.listbox.pack(fill=tk.BOTH, expand=True)
+            scrollbar.config(command=self.listbox.yview)
+            self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
+            
+            # ========== СТАТИСТИКА ==========
+            stats_frame = tk.LabelFrame(main, text=" Статистика безопасности ", bg=COLORS["bg"], fg=COLORS["header"], font=("Arial", 10, "bold"))
+            stats_frame.pack(fill=tk.X, pady=10)
+            
+            self.stats_label = tk.Label(stats_frame, text="", bg=COLORS["bg"], fg=COLORS["fg"])
+            self.stats_label.pack(anchor=tk.W, padx=5, pady=5)
+            
+            # Загружаем записи
+            self._show_records()
+            
+            print("DEBUG: _build_main_window() завершено")
+            
+        except Exception as error:
+            print(f"DEBUG: Ошибка в _build_main_window: {error}")
+            app_logger.log_error(f"Ошибка построения окна: {error}")
+            raise
+
+    def _update_strength(self) -> None:
+        """Обновление индикатора надёжности."""
+        password = self.password_var.get()
+        if not password:
+            self.strength_bar.delete("all")
+            self.strength_label.config(text="—")
+            self.recommend_label.config(text="")
+            return
+        
+        score, level, recommendations = analyze_password_strength(password)
+        
+        # Рисуем прогресс-бар
+        width = (score / 100) * 200
+        color_map = {"слабый": COLORS["weak"], "средний": COLORS["medium"], "сильный": COLORS["strong"]}
+        color = color_map.get(level, COLORS["fg"])
+        
+        self.strength_bar.delete("all")
+        self.strength_bar.create_rectangle(0, 0, width, 20, fill=color, outline=color)
+        
+        self.strength_label.config(text=f"{score}/100 — {level}")
+        if recommendations:
+            self.recommend_label.config(text="Рекомендации: " + "; ".join(recommendations))
+        else:
+            self.recommend_label.config(text="")
+
+    def _refresh_listbox(self, indexed_records: list[tuple[int, dict]]) -> None:
+        """Обновление списка."""
+        self.listbox.delete(0, tk.END)
+        for storage_index, record in indexed_records:
+            line = f"{record['site']:20} | {record['login']:20} | {record['created_at']}"
+            self.listbox.insert(tk.END, line)
+            self.listbox.itemconfig(tk.END, {"bg": COLORS["tree_bg"]})
+        
+        records = [record for _, record in indexed_records]
+        self._update_statistics(records)
+
+    def _update_statistics(self, records: list[dict]) -> None:
+        """Обновление статистики."""
         stats = compute_statistics(records)
         text = (
-            f"Всего записей: {stats['total']}  |  "
-            f"Средняя длина паролей: {stats['avg_length']}  |  "
-            f"Сильных паролей: {stats['strong_count']}  |  "
-            f"Процент сильных: {stats['strong_percent']}%"
+            f"Всего: {stats['total']}  |  "
+            f"Ср. длина: {stats['avg_length']}  |  "
+            f"Сильных: {stats['strong_count']} ({stats['strong_percent']}%)"
         )
         self.stats_label.config(text=text)
 
     def _on_search(self) -> None:
-        """Фильтрация таблицы по поисковому запросу."""
-        try:
-            query = self.search_var.get()
-            indexed_records = pwd_manager.search_by_site(query)
-            self._refresh_table(indexed_records)
-        except Exception as error:
-            app_logger.log_error(f"Ошибка поиска: {error}")
+        """Поиск."""
+        query = self.search_var.get()
+        indexed = pwd_manager.search_by_site(query)
+        self._refresh_listbox(indexed)
 
-    def _on_tree_select(self, _event: Any = None) -> None:
-        """Заполнение формы при выборе строки таблицы."""
+    def _on_listbox_select(self, _event: Any = None) -> None:
+        """Выбор записи."""
         try:
-            selection = self.tree.selection()
+            selection = self.listbox.curselection()
             if not selection:
-                self._selected_index = None
                 return
-            storage_index = int(selection[0])
-            self._selected_index = storage_index
+            
+            idx = selection[0]
             records = pwd_manager.get_records()
-            if 0 <= storage_index < len(records):
-                record = records[storage_index]
+            
+            # Найдём индекс оригинальной записи
+            query = self.search_var.get()
+            indexed = pwd_manager.search_by_site(query)
+            
+            if idx < len(indexed):
+                storage_index, record = indexed[idx]
                 self.site_var.set(record["site"])
                 self.login_var.set(record["login"])
                 self.password_var.set(record["password"])
         except Exception as error:
-            app_logger.log_error(f"Ошибка выбора записи: {error}")
+            app_logger.log_error(f"Ошибка выбора: {error}")
 
     def _clear_form(self) -> None:
-        """Очищает поля формы."""
+        """Очистка формы."""
         self.site_var.set("")
         self.login_var.set("")
         self.password_var.set("")
-        self._selected_index = None
 
     def _save_record(self) -> None:
-        """Сохранение новой записи."""
+        """Сохранение записи."""
         try:
-            success, message = pwd_manager.add_record(
+            success, msg = pwd_manager.add_record(
                 self.site_var.get(),
                 self.login_var.get(),
                 self.password_var.get(),
             )
             if success:
-                messagebox.showinfo("Успех", "Запись сохранена.")
+                messagebox.showinfo("Успех", "Запись сохранена")
                 self._clear_form()
                 self._on_search()
             else:
-                messagebox.showwarning("Внимание", message)
+                messagebox.showwarning("Ошибка", msg)
         except Exception as error:
             app_logger.log_error(f"Ошибка сохранения: {error}")
             messagebox.showerror("Ошибка", str(error))
 
     def _edit_record(self) -> None:
-        """Редактирование выбранной записи."""
+        """Редактирование."""
         try:
-            if self._selected_index is None:
-                messagebox.showwarning("Внимание", "Выберите запись в таблице.")
+            query = self.search_var.get()
+            indexed = pwd_manager.search_by_site(query)
+            selection = self.listbox.curselection()
+            
+            if not selection:
+                messagebox.showwarning("Внимание", "Выберите запись")
                 return
-            success, message = pwd_manager.update_record(
-                self._selected_index,
-                self.site_var.get(),
-                self.login_var.get(),
-                self.password_var.get(),
-            )
-            if success:
-                messagebox.showinfo("Успех", "Запись обновлена.")
-                self._on_search()
-            else:
-                messagebox.showwarning("Внимание", message)
+            
+            idx = selection[0]
+            if idx < len(indexed):
+                storage_index, _ = indexed[idx]
+                success, msg = pwd_manager.update_record(
+                    storage_index,
+                    self.site_var.get(),
+                    self.login_var.get(),
+                    self.password_var.get(),
+                )
+                if success:
+                    messagebox.showinfo("Успех", "Запись обновлена")
+                    self._on_search()
+                else:
+                    messagebox.showwarning("Ошибка", msg)
         except Exception as error:
             app_logger.log_error(f"Ошибка редактирования: {error}")
             messagebox.showerror("Ошибка", str(error))
 
     def _delete_record(self) -> None:
-        """Удаление выбранной записи."""
+        """Удаление."""
         try:
-            if self._selected_index is None:
-                messagebox.showwarning("Внимание", "Выберите запись в таблице.")
+            query = self.search_var.get()
+            indexed = pwd_manager.search_by_site(query)
+            selection = self.listbox.curselection()
+            
+            if not selection:
+                messagebox.showwarning("Внимание", "Выберите запись")
                 return
-            if not messagebox.askyesno("Подтверждение", "Удалить выбранную запись?"):
+            
+            if not messagebox.askyesno("Подтверждение", "Удалить запись?"):
                 return
-            success, message = pwd_manager.delete_record(self._selected_index)
-            if success:
-                messagebox.showinfo("Успех", "Запись удалена.")
-                self._clear_form()
-                self._on_search()
-            else:
-                messagebox.showwarning("Внимание", message)
+            
+            idx = selection[0]
+            if idx < len(indexed):
+                storage_index, _ = indexed[idx]
+                success, msg = pwd_manager.delete_record(storage_index)
+                if success:
+                    messagebox.showinfo("Успех", "Запись удалена")
+                    self._clear_form()
+                    self._on_search()
+                else:
+                    messagebox.showwarning("Ошибка", msg)
         except Exception as error:
             app_logger.log_error(f"Ошибка удаления: {error}")
             messagebox.showerror("Ошибка", str(error))
 
     def _show_records(self) -> None:
-        """Загрузка и отображение всех записей."""
+        """Показать все записи."""
         try:
-            success, message = pwd_manager.load_records()
-            if not success:
-                messagebox.showerror("Ошибка", message)
-                return
+            pwd_manager.load_records()
             self.search_var.set("")
             indexed = list(enumerate(pwd_manager.get_records()))
-            self._refresh_table(indexed)
+            self._refresh_listbox(indexed)
         except Exception as error:
-            app_logger.log_error(f"Ошибка загрузки записей: {error}")
+            app_logger.log_error(f"Ошибка загрузки: {error}")
             messagebox.showerror("Ошибка", str(error))
 
     def _copy_password(self) -> None:
-        """Копирование пароля выбранной записи в буфер обмена."""
+        """Копирование пароля."""
         try:
             password = self.password_var.get()
             if not password:
-                messagebox.showwarning("Внимание", "Нет пароля для копирования.")
+                messagebox.showwarning("Внимание", "Нет пароля")
                 return
             pyperclip.copy(password)
-            messagebox.showinfo("Успех", "Пароль скопирован в буфер обмена.")
+            messagebox.showinfo("Успех", "Пароль скопирован")
         except Exception as error:
             app_logger.log_error(f"Ошибка копирования: {error}")
-            messagebox.showerror("Ошибка", f"Не удалось скопировать: {error}")
+            messagebox.showerror("Ошибка", str(error))
 
     def _generate_password_dialog(self) -> None:
-        """Диалог генератора надёжных паролей."""
+        """Генератор паролей."""
         dialog = tk.Toplevel(self.root)
         dialog.title("Генератор паролей")
-        dialog.geometry("380x320")
+        dialog.geometry("380x300")
         dialog.configure(bg=COLORS["bg"])
-        dialog.grab_set()
 
-        frame = ttk.Frame(dialog, style="Dark.TFrame", padding=15)
-        frame.pack(fill=tk.BOTH, expand=True)
+        frame = tk.Frame(dialog, bg=COLORS["bg"])
+        frame.pack(fill=tk.BOTH, expand=True, padx=15, pady=15)
 
-        ttk.Label(frame, text="Генератор надёжных паролей", style="Header.TLabel").pack(pady=(0, 10))
+        tk.Label(frame, text="Генератор паролей", font=("Arial", 12, "bold"), bg=COLORS["bg"], fg=COLORS["header"]).pack(pady=(0, 10))
 
         length_var = tk.IntVar(value=16)
-        ttk.Label(frame, text="Длина (12–20):", style="Dark.TLabel").pack(anchor=tk.W)
-        length_scale = ttk.Scale(frame, from_=12, to=20, orient=tk.HORIZONTAL, variable=length_var)
-        length_scale.pack(fill=tk.X, pady=4)
-        length_display = ttk.Label(frame, text="16", style="Dark.TLabel")
-        length_display.pack(anchor=tk.W)
-
-        def update_length_label(_val: Any = None) -> None:
-            length_display.config(text=str(int(length_var.get())))
-
-        length_scale.configure(command=update_length_label)
+        tk.Label(frame, text="Длина (12–20):", bg=COLORS["bg"], fg=COLORS["fg"]).pack(anchor=tk.W)
+        tk.Scale(frame, from_=12, to=20, orient=tk.HORIZONTAL, variable=length_var, bg=COLORS["button_bg"], fg=COLORS["button_fg"]).pack(fill=tk.X, pady=5)
 
         lower_var = tk.BooleanVar(value=True)
         upper_var = tk.BooleanVar(value=True)
@@ -832,90 +705,72 @@ class PasswordManagerApp:
         special_var = tk.BooleanVar(value=True)
 
         for text, var in [
-            ("Строчные буквы (a-z)", lower_var),
-            ("Заглавные буквы (A-Z)", upper_var),
-            ("Цифры (0-9)", digits_var),
-            ("Специальные символы", special_var),
+            ("Строчные буквы", lower_var),
+            ("Заглавные буквы", upper_var),
+            ("Цифры", digits_var),
+            ("Спецсимволы", special_var),
         ]:
-            ttk.Checkbutton(frame, text=text, variable=var).pack(anchor=tk.W)
+            tk.Checkbutton(frame, text=text, variable=var, bg=COLORS["bg"], fg=COLORS["fg"], selectcolor=COLORS["button_bg"]).pack(anchor=tk.W)
 
         result_var = tk.StringVar()
 
         def do_generate() -> None:
-            try:
-                pwd = generate_password(
-                    length=int(length_var.get()),
-                    use_lower=lower_var.get(),
-                    use_upper=upper_var.get(),
-                    use_digits=digits_var.get(),
-                    use_special=special_var.get(),
-                )
-                result_var.set(pwd)
-                app_logger.log(app_logger.EVENT_GENERATE, "Сгенерирован новый пароль")
-            except Exception as error:
-                app_logger.log_error(f"Ошибка генерации пароля: {error}")
+            pwd = generate_password(
+                length=int(length_var.get()),
+                use_lower=lower_var.get(),
+                use_upper=upper_var.get(),
+                use_digits=digits_var.get(),
+                use_special=special_var.get(),
+            )
+            result_var.set(pwd)
 
-        ttk.Button(frame, text="Сгенерировать", style="Dark.TButton", command=do_generate).pack(pady=8)
-        ttk.Entry(frame, textvariable=result_var, width=40).pack(pady=4)
+        tk.Button(frame, text="Сгенерировать", command=do_generate, bg=COLORS["button_bg"], fg=COLORS["button_fg"], padx=15, pady=5).pack(pady=8)
+        tk.Entry(frame, textvariable=result_var, width=40, bg=COLORS["entry_bg"], fg=COLORS["fg"]).pack(pady=5)
 
-        def insert_password() -> None:
-            pwd = result_var.get()
-            if pwd:
-                self.password_var.set(pwd)
+        def insert() -> None:
+            if result_var.get():
+                self.password_var.set(result_var.get())
                 dialog.destroy()
 
-        ttk.Button(frame, text="Вставить в поле пароля", style="Dark.TButton", command=insert_password).pack(pady=5)
+        tk.Button(frame, text="Вставить", command=insert, bg=COLORS["button_bg"], fg=COLORS["button_fg"], padx=15, pady=5).pack()
         do_generate()
 
     def _create_backup(self) -> None:
-        """Создание резервной копии."""
+        """Резервная копия."""
         try:
-            success, message = backup_manager.create_backup()
-            if success:
-                messagebox.showinfo("Успех", f"Резервная копия создана:\n{message}")
-            else:
-                messagebox.showwarning("Внимание", message)
+            success, msg = backup_manager.create_backup()
+            messagebox.showinfo("Успех" if success else "Ошибка", msg)
         except Exception as error:
-            app_logger.log_error(f"Ошибка резервного копирования: {error}")
+            app_logger.log_error(f"Ошибка backup: {error}")
             messagebox.showerror("Ошибка", str(error))
 
     def _restore_backup(self) -> None:
-        """Восстановление из резервной копии."""
+        """Восстановление."""
         try:
-            filepath = filedialog.askopenfilename(
-                title="Выберите файл резервной копии",
-                initialdir=os.path.join(PROJECT_DIR, "backups"),
-                filetypes=[("JSON файлы", "*.json"), ("Все файлы", "*.*")],
-            )
-            if not filepath:
+            filepath = filedialog.askopenfilename(title="Выберите backup", filetypes=[("JSON", "*.json")])
+            if not filepath or not messagebox.askyesno("Подтверждение", "Восстановить?"):
                 return
-            if not messagebox.askyesno("Подтверждение", "Восстановить данные из выбранной копии?"):
-                return
-            success, message = backup_manager.restore_backup(filepath)
+            success, msg = backup_manager.restore_backup(filepath)
             if success:
                 pwd_manager.load_records()
                 self._on_search()
-                messagebox.showinfo("Успех", message)
-            else:
-                messagebox.showwarning("Внимание", message)
+            messagebox.showinfo("Успех" if success else "Ошибка", msg)
         except Exception as error:
-            app_logger.log_error(f"Ошибка восстановления: {error}")
+            app_logger.log_error(f"Ошибка restore: {error}")
             messagebox.showerror("Ошибка", str(error))
 
     def _export_pdf(self) -> None:
-        """Экспорт отчёта в PDF."""
+        """Экспорт PDF."""
         try:
             from datetime import datetime
-
             from reportlab.lib.pagesizes import A4
             from reportlab.pdfgen import canvas
 
             os.makedirs(EXPORTS_DIR, exist_ok=True)
             records = pwd_manager.get_records()
             stats = compute_statistics(records)
-            timestamp = datetime.now().strftime("%Y_%m_%d_%H_%M")
-            filepath = os.path.join(EXPORTS_DIR, f"report_{timestamp}.pdf")
-
+            
+            filepath = os.path.join(EXPORTS_DIR, f"report_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pdf")
             pdf = canvas.Canvas(filepath, pagesize=A4)
             width, height = A4
             y = height - 50
@@ -924,212 +779,156 @@ class PasswordManagerApp:
             pdf.drawString(50, y, "Отчёт — Менеджер паролей")
             y -= 30
 
-            pdf.setFont("Helvetica", 11)
-            pdf.drawString(50, y, f"Дата создания отчёта: {datetime.now().strftime('%d.%m.%Y %H:%M:%S')}")
-            y -= 25
-            pdf.drawString(50, y, f"Количество записей: {stats['total']}")
+            pdf.setFont("Helvetica", 10)
+            pdf.drawString(50, y, f"Записей: {stats['total']} | Ср. длина: {stats['avg_length']} | Сильных: {stats['strong_percent']}%")
             y -= 20
-            pdf.drawString(50, y, f"Средняя длина паролей: {stats['avg_length']}")
-            y -= 20
-            pdf.drawString(50, y, f"Сильных паролей: {stats['strong_count']} ({stats['strong_percent']}%)")
-            y -= 30
 
             pdf.setFont("Helvetica-Bold", 12)
-            pdf.drawString(50, y, "Список сайтов:")
-            y -= 20
-            pdf.setFont("Helvetica", 10)
+            pdf.drawString(50, y, "Сайты:")
+            y -= 15
 
+            pdf.setFont("Helvetica", 9)
             for record in records:
                 if y < 60:
                     pdf.showPage()
                     y = height - 50
-                    pdf.setFont("Helvetica", 10)
                 pdf.drawString(60, y, f"• {record['site']} — {record['created_at']}")
-                y -= 16
+                y -= 12
 
             pdf.save()
-            app_logger.log(app_logger.EVENT_EXPORT, f"Экспорт PDF: {os.path.basename(filepath)}")
-            messagebox.showinfo("Успех", f"Отчёт сохранён:\n{filepath}")
+            messagebox.showinfo("Успех", f"Сохранено: {filepath}")
         except Exception as error:
-            app_logger.log_error(f"Ошибка экспорта PDF: {error}")
-            messagebox.showerror("Ошибка", f"Не удалось создать PDF: {error}")
+            app_logger.log_error(f"Ошибка PDF: {error}")
+            messagebox.showerror("Ошибка", str(error))
 
     def _show_qr_code(self) -> None:
-        """Генерация и отображение QR-кода для выбранной записи."""
+        """QR-код."""
         try:
-            if self._selected_index is None:
-                messagebox.showwarning("Внимание", "Выберите запись в таблице.")
+            selection = self.listbox.curselection()
+            if not selection:
+                messagebox.showwarning("Внимание", "Выберите запись")
                 return
 
             site = self.site_var.get()
-            login = self.login_var.get()
-            password = self.password_var.get()
-            qr_data = f"SITE:{site}\nLOGIN:{login}\nPASS:{password}"
+            qr_data = f"SITE:{site}\nLOGIN:{self.login_var.get()}\nPASS:{self.password_var.get()}"
 
             os.makedirs(EXPORTS_DIR, exist_ok=True)
             from datetime import datetime
-
-            filename = f"qr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png"
-            filepath = os.path.join(EXPORTS_DIR, filename)
+            filepath = os.path.join(EXPORTS_DIR, f"qr_{datetime.now().strftime('%Y%m%d_%H%M%S')}.png")
 
             if not save_qr_code(qr_data, filepath):
-                messagebox.showerror("Ошибка", "Не удалось создать QR-код.")
+                messagebox.showerror("Ошибка", "Не удалось создать QR")
                 return
 
-            qr_window = tk.Toplevel(self.root)
-            qr_window.title(f"QR-код — {site}")
-            qr_window.configure(bg=COLORS["bg"])
-            qr_window.geometry("320x380")
+            try:
+                from PIL import Image, ImageTk
+                qr_window = tk.Toplevel(self.root)
+                qr_window.title(f"QR-код — {site}")
+                qr_window.configure(bg=COLORS["bg"])
 
-            from PIL import Image, ImageTk
+                img = Image.open(filepath)
+                img = img.resize((250, 250), Image.Resampling.LANCZOS)
+                photo = ImageTk.PhotoImage(img)
 
-            img = Image.open(filepath)
-            img = img.resize((250, 250), Image.Resampling.LANCZOS)
-            photo = ImageTk.PhotoImage(img)
-
-            label = ttk.Label(qr_window, image=photo, background=COLORS["bg"])
-            label.image = photo  # type: ignore[attr-defined]
-            label.pack(pady=15)
-
-            ttk.Label(
-                qr_window,
-                text=f"Сохранено: {filename}",
-                style="Dark.TLabel",
-            ).pack()
+                label = tk.Label(qr_window, image=photo, bg=COLORS["bg"])
+                label.image = photo
+                label.pack(pady=15)
+            except ImportError:
+                messagebox.showinfo("QR создан", f"Сохранено: {filepath}")
         except Exception as error:
-            app_logger.log_error(f"Ошибка QR-кода: {error}")
+            app_logger.log_error(f"Ошибка QR: {error}")
             messagebox.showerror("Ошибка", str(error))
 
     def _show_history(self) -> None:
-        """Окно истории действий на основе журнала."""
+        """История действий."""
         try:
-            history_window = tk.Toplevel(self.root)
-            history_window.title("История действий")
-            history_window.geometry("700x450")
-            history_window.configure(bg=COLORS["bg"])
+            window = tk.Toplevel(self.root)
+            window.title("История")
+            window.geometry("700x450")
+            window.configure(bg=COLORS["bg"])
 
-            frame = ttk.Frame(history_window, style="Dark.TFrame", padding=10)
-            frame.pack(fill=tk.BOTH, expand=True)
+            frame = tk.Frame(window, bg=COLORS["bg"])
+            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
 
-            ttk.Label(frame, text="Последние действия", style="Header.TLabel").pack(anchor=tk.W, pady=(0, 8))
+            tk.Label(frame, text="История действий", font=("Arial", 12, "bold"), bg=COLORS["bg"], fg=COLORS["header"]).pack()
 
-            text_widget = tk.Text(
-                frame,
-                bg=COLORS["entry_bg"],
-                fg=COLORS["fg"],
-                font=("Consolas", 9),
-                wrap=tk.WORD,
-            )
-            text_widget.pack(fill=tk.BOTH, expand=True)
-
-            scrollbar = ttk.Scrollbar(frame, command=text_widget.yview)
-            text_widget.configure(yscrollcommand=scrollbar.set)
+            text = tk.Text(frame, bg=COLORS["entry_bg"], fg=COLORS["fg"], font=("Courier", 9), wrap=tk.WORD)
+            text.pack(fill=tk.BOTH, expand=True, pady=10)
 
             entries = app_logger.get_recent_entries(100)
-            if entries:
-                text_widget.insert(tk.END, "\n".join(entries))
-            else:
-                text_widget.insert(tk.END, "Журнал пуст.")
-            text_widget.config(state=tk.DISABLED)
+            text.insert(tk.END, "\n".join(entries) if entries else "Журнал пуст")
+            text.config(state=tk.DISABLED)
         except Exception as error:
-            app_logger.log_error(f"Ошибка окна истории: {error}")
-            messagebox.showerror("Ошибка", str(error))
+            app_logger.log_error(f"Ошибка истории: {error}")
 
     def _show_protection_info(self) -> None:
-        """Информационное окно «Виды защиты информации»."""
-        info_text = """
-ВИДЫ ЗАЩИТЫ ИНФОРМАЦИИ
+        """О защите информации."""
+        try:
+            window = tk.Toplevel(self.root)
+            window.title("О защите информации")
+            window.geometry("620x520")
+            window.configure(bg=COLORS["bg"])
+
+            frame = tk.Frame(window, bg=COLORS["bg"])
+            frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+
+            tk.Label(frame, text="Виды защиты информации", font=("Arial", 12, "bold"), bg=COLORS["bg"], fg=COLORS["header"]).pack()
+
+            text = tk.Text(frame, bg=COLORS["entry_bg"], fg=COLORS["fg"], font=("Arial", 9), wrap=tk.WORD)
+            text.pack(fill=tk.BOTH, expand=True, pady=10)
+
+            info = """ВИДЫ ЗАЩИТЫ ИНФОРМАЦИИ
 
 1. Физическая защита
-   Охрана помещений, сейфы, контроль доступа, видеонаблюдение.
-   Препятствует несанкционированному физическому доступу к носителям данных.
+   Охрана помещений, сейфы, контроль доступа.
 
 2. Программная защита
-   Шифрование, аутентификация, антивирусы, контроль целостности.
-   Данное приложение использует SHA-256, Fernet и безопасное хранение.
+   Шифрование (Fernet/AES), аутентификация (SHA-256).
 
 3. Аппаратная защита
-   TPM-модули, аппаратные ключи (HSM), смарт-карты, биометрические сканеры.
-   Обеспечивают защиту на уровне оборудования.
+   TPM-модули, HSM, биометрия.
 
 4. Организационная защита
-   Политики безопасности, инструкции, разграничение прав, обучение персонала.
-   Регламентирует работу с конфиденциальной информацией.
+   Политики, разграничение прав.
 
 5. Законодательная защита
-   ФЗ «О персональных данных», GDPR, уголовная ответственность за утечки.
-   Правовые механизмы защиты информации.
+   ФЗ «О персональных данных», GDPR.
 
 6. Психологическая защита
-   Повышение осведомлённости, противодействие социальной инженерии,
-   формирование культуры информационной безопасности.
+   Осведомлённость, противодействие социнженерии.
 
-Реализованные меры в «Менеджере паролей»:
-• Хеширование мастер-пароля (SHA-256)
-• Шифрование данных (Fernet / AES)
-• Защита от перебора пароля
-• Автоблокировка при бездействии
-• Журналирование всех действий
-• Резервное копирование
-"""
-        try:
-            info_window = tk.Toplevel(self.root)
-            info_window.title("Виды защиты информации")
-            info_window.geometry("620x520")
-            info_window.configure(bg=COLORS["bg"])
+РЕАЛИЗОВАНО В ПРИЛОЖЕНИИ:
+✓ SHA-256 хеширование мастер-пароля
+✓ Fernet шифрование данных
+✓ Защита от перебора (блокировка на 30 сек)
+✓ Автоблокировка после 5 минут
+✓ Журналирование всех действий
+✓ Резервное копирование"""
 
-            frame = ttk.Frame(info_window, style="Dark.TFrame", padding=10)
-            frame.pack(fill=tk.BOTH, expand=True)
-
-            ttk.Label(frame, text="Информация о защите данных", style="Header.TLabel").pack(anchor=tk.W)
-
-            text_widget = tk.Text(
-                frame,
-                bg=COLORS["entry_bg"],
-                fg=COLORS["fg"],
-                font=("Segoe UI", 10),
-                wrap=tk.WORD,
-                padx=10,
-                pady=10,
-            )
-            text_widget.pack(fill=tk.BOTH, expand=True, pady=8)
-            text_widget.insert(tk.END, info_text.strip())
-            text_widget.config(state=tk.DISABLED)
+            text.insert(tk.END, info)
+            text.config(state=tk.DISABLED)
         except Exception as error:
-            app_logger.log_error(f"Ошибка информационного окна: {error}")
-            messagebox.showerror("Ошибка", str(error))
+            app_logger.log_error(f"Ошибка info: {error}")
 
 
 def main() -> None:
-    """Точка входа приложения."""
+    """Главная функция."""
+    print("\n" + "=" * 80)
+    print("ЗАПУСК МЕНЕДЖЕРА ПАРОЛЕЙ")
+    print("=" * 80 + "\n")
+
     try:
-        print("=" * 80)
-        print("НАЧАЛО ЗАПУСКА ПРИЛОЖЕНИЯ МЕНЕДЖЕР ПАРОЛЕЙ")
-        print("=" * 80)
-        app_logger.log("MAIN", "=== НАЧАЛО ВЫПОЛНЕНИЯ main() ===")
-        
+        print("DEBUG: Создание объекта приложения...")
         app = PasswordManagerApp()
-        app_logger.log("MAIN", "✓ Объект приложения создан")
-        
-        app_logger.log("MAIN", "Вызов app.run()...")
+        print("DEBUG: Объект создан успешно, запуск...")
         app.run()
-        app_logger.log("MAIN", "✓ app.run() завершился")
-        
-        print("=" * 80)
-        print("ПРИЛОЖЕНИЕ ЗАВЕРШИЛО РАБОТУ УСПЕШНО")
-        print("=" * 80)
-        app_logger.log("MAIN", "=== main() ЗАВЕРШЕНА УСПЕШНО ===")
-        
+        print("\nDEBUG: Приложение завершено\n")
+
     except Exception as error:
-        print("=" * 80)
-        print(f"КРИТИЧЕСКАЯ ОШИБКА: {error}")
-        print(f"Тип: {type(error).__name__}")
-        print("=" * 80)
-        app_logger.log_error(f"Необработанная ошибка запуска: {error}")
-        app_logger.log_error(f"Тип ошибки: {type(error).__name__}")
+        print(f"\nERROR: {error}\n")
+        app_logger.log_error(f"Критическая ошибка: {error}")
         import traceback
-        app_logger.log_error(f"Трассировка: {traceback.format_exc()}")
-        messagebox.showerror("Критическая ошибка", str(error))
+        print(traceback.format_exc())
         sys.exit(1)
 
 
