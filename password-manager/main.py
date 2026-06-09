@@ -65,11 +65,13 @@ class PasswordManagerApp:
             
             # Создаём корневое окно СРАЗУ
             self.root = tk.Tk()
-            print("DEBUG: Tkinter Tk() создан успешно")
-            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Tkinter корень создан")
+            self.root.withdraw()  # ← СКРЫВАЕМ СРАЗУ
+            print("DEBUG: Tkinter Tk() создан и скрыт")
+            app_logger.log("ИНИЦИАЛИЗАЦИЯ", "✓ Tkinter корень создан и скрыт")
             
             # Минимальная настройка окна
             self.root.title("Менеджер паролей — Защита информации")
+            self.root.configure(bg=COLORS["bg"])
             self.root.geometry("1000x650")
             self.root.minsize(800, 500)
             
@@ -134,15 +136,26 @@ class PasswordManagerApp:
             print(f"DEBUG: first_run = {first_run}")
             app_logger.log("ЗАПУСК", f"Первый запуск: {first_run}")
             
-            # АВТОРИЗАЦИЯ
-            print("DEBUG: Показываем диалог авторизации")
-            app_logger.log("ЗАПУСК", "Показ диалога авторизации...")
-            
-            if not self._show_auth_dialog(first_run=first_run):
-                print("DEBUG: Авторизация отменена")
-                app_logger.log("ЗАПУСК", "Авторизация отменена пользователем")
-                self._safe_close()
-                return
+            # АВТОРИЗАЦИЯ - ЕСЛИ ПЕРВЫЙ ЗАПУСК
+            if first_run:
+                print("DEBUG: Первый запуск - показываем диалог создания пароля")
+                app_logger.log("ЗАПУСК", "Первый запуск - диалог создания мастер-пароля")
+                
+                if not self._show_auth_dialog(first_run=True):
+                    print("DEBUG: Авторизация отменена")
+                    app_logger.log("ЗАПУСК", "Авторизация отменена пользователем")
+                    self._safe_close()
+                    return
+            else:
+                # ВТОРОЙ И ПОСЛЕДУЮЩИЕ ЗАПУСКИ - ПРОВЕРЯЕМ ПАРОЛЬ
+                print("DEBUG: Не первый запуск - показываем диалог входа")
+                app_logger.log("ЗАПУСК", "Повторный запуск - диалог входа")
+                
+                if not self._show_auth_dialog(first_run=False):
+                    print("DEBUG: Авторизация отменена")
+                    app_logger.log("ЗАПУСК", "Авторизация отменена пользователем")
+                    self._safe_close()
+                    return
             
             print("DEBUG: Авторизация успешна")
             app_logger.log("ЗАПУСК", "✓ Авторизация успешна")
@@ -222,7 +235,7 @@ class PasswordManagerApp:
 
     # ================================================================ AUTH
     def _show_auth_dialog(self, first_run: bool = False, auto_lock: bool = False) -> bool:
-        """Диалог авторизации."""
+        """Диалог авторизации - ПОЛНОСТЬЮ ЧЁРНАЯ ТЕМА."""
         try:
             print(f"DEBUG: Открытие диалога авторизации (first_run={first_run})")
             
@@ -232,10 +245,12 @@ class PasswordManagerApp:
             auth_window.resizable(False, False)
             auth_window.transient(self.root)
             auth_window.grab_set()
+            # ЧЁРНЫЙ ФОННННН
+            auth_window.configure(bg=COLORS["bg"])
 
             result = {"success": False}
 
-            # Простой фрейм без стилей
+            # Простой фрейм БЕЗ БЕЛЫХ УЧАСТКОВ
             frame = tk.Frame(auth_window, bg=COLORS["bg"])
             frame.pack(fill=tk.BOTH, expand=True, padx=20, pady=20)
 
@@ -263,7 +278,17 @@ class PasswordManagerApp:
             # Пароль
             tk.Label(frame, text="Мастер-пароль:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(anchor=tk.W)
             password_var = tk.StringVar()
-            password_entry = tk.Entry(frame, textvariable=password_var, show="•", width=40, bg=COLORS["entry_bg"], fg=COLORS["fg"], insertbackground=COLORS["fg"])
+            password_entry = tk.Entry(
+                frame, 
+                textvariable=password_var, 
+                show="•", 
+                width=40, 
+                bg=COLORS["entry_bg"], 
+                fg=COLORS["fg"], 
+                insertbackground=COLORS["fg"],
+                relief=tk.FLAT,
+                borderwidth=0,
+            )
             password_entry.pack(pady=5, fill=tk.X)
 
             # Подтверждение
@@ -272,7 +297,17 @@ class PasswordManagerApp:
             if first_run:
                 tk.Label(frame, text="Подтверждение:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(anchor=tk.W, pady=(10, 0))
                 confirm_var = tk.StringVar()
-                confirm_entry = tk.Entry(frame, textvariable=confirm_var, show="•", width=40, bg=COLORS["entry_bg"], fg=COLORS["fg"], insertbackground=COLORS["fg"])
+                confirm_entry = tk.Entry(
+                    frame, 
+                    textvariable=confirm_var, 
+                    show="•", 
+                    width=40, 
+                    bg=COLORS["entry_bg"], 
+                    fg=COLORS["fg"], 
+                    insertbackground=COLORS["fg"],
+                    relief=tk.FLAT,
+                    borderwidth=0,
+                )
                 confirm_entry.pack(pady=5, fill=tk.X)
 
             # Статус
@@ -293,11 +328,20 @@ class PasswordManagerApp:
 
                 if first_run:
                     confirm = confirm_var.get() if confirm_var else ""
+                    if not password:
+                        status_label.config(text="Введите пароль")
+                        return
+                    if not confirm:
+                        status_label.config(text="Подтвердите пароль")
+                        return
                     if password != confirm:
                         status_label.config(text="Пароли не совпадают")
                         return
                     success, msg = auth_manager.create_master_password(password)
                 else:
+                    if not password:
+                        status_label.config(text="Введите пароль")
+                        return
                     if auth_manager.is_locked_out():
                         status_label.config(text=f"Подождите {auth_manager.get_lockout_remaining()} сек")
                         return
@@ -311,7 +355,7 @@ class PasswordManagerApp:
                 else:
                     status_label.config(text=msg)
 
-            # Кнопки
+            # Кнопки - БЕЗ БЕЛЫХ БОРДЕРОВ
             btn_frame = tk.Frame(frame, bg=COLORS["bg"])
             btn_frame.pack(pady=15)
             
@@ -321,8 +365,13 @@ class PasswordManagerApp:
                 command=on_submit,
                 bg=COLORS["button_bg"],
                 fg=COLORS["button_fg"],
+                activebackground=COLORS["accent"],
+                activeforeground=COLORS["bg"],
                 padx=15,
                 pady=5,
+                relief=tk.FLAT,
+                borderwidth=0,
+                cursor="hand2",
             )
             submit_btn.pack(side=tk.LEFT, padx=5)
             
@@ -333,8 +382,13 @@ class PasswordManagerApp:
                     command=auth_window.destroy,
                     bg=COLORS["button_bg"],
                     fg=COLORS["button_fg"],
+                    activebackground=COLORS["accent"],
+                    activeforeground=COLORS["bg"],
                     padx=15,
                     pady=5,
+                    relief=tk.FLAT,
+                    borderwidth=0,
+                    cursor="hand2",
                 ).pack(side=tk.LEFT, padx=5)
 
             password_entry.bind("<Return>", lambda e: on_submit())
@@ -356,7 +410,7 @@ class PasswordManagerApp:
 
     # ================================================================ UI
     def _build_main_window(self) -> None:
-        """Построение главного окна - МАКСИМАЛЬНО ПРОСТО."""
+        """Построение главного окна - ПОЛНОСТЬЮ ЧЁРНАЯ ТЕМА."""
         try:
             print("DEBUG: _build_main_window() начало")
             
@@ -364,7 +418,7 @@ class PasswordManagerApp:
             for widget in self.root.winfo_children():
                 widget.destroy()
             
-            # Главный контейнер
+            # Главный контейнер - ЧЁРНЫЙ
             main = tk.Frame(self.root, bg=COLORS["bg"])
             main.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
             
@@ -378,11 +432,28 @@ class PasswordManagerApp:
             tk.Label(search_frame, text="Поиск:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(side=tk.LEFT)
             self.search_var = tk.StringVar()
             self.search_var.trace_add("write", lambda *_: self._on_search())
-            search_entry = tk.Entry(search_frame, textvariable=self.search_var, width=30, bg=COLORS["entry_bg"], fg=COLORS["fg"])
+            search_entry = tk.Entry(
+                search_frame, 
+                textvariable=self.search_var, 
+                width=30, 
+                bg=COLORS["entry_bg"], 
+                fg=COLORS["fg"],
+                insertbackground=COLORS["fg"],
+                relief=tk.FLAT,
+                borderwidth=0,
+            )
             search_entry.pack(side=tk.LEFT, padx=10)
             
             # ========== ФОРМА ==========
-            form_frame = tk.LabelFrame(main, text=" Запись ", bg=COLORS["bg"], fg=COLORS["header"], font=("Arial", 10, "bold"))
+            form_frame = tk.LabelFrame(
+                main, 
+                text=" Запись ", 
+                bg=COLORS["bg"], 
+                fg=COLORS["header"], 
+                font=("Arial", 10, "bold"),
+                relief=tk.FLAT,
+                borderwidth=1,
+            )
             form_frame.pack(fill=tk.X, pady=10)
             
             # Поля ввода
@@ -393,21 +464,49 @@ class PasswordManagerApp:
             
             # Сайт
             tk.Label(form_frame, text="Сайт:", bg=COLORS["bg"], fg=COLORS["fg"]).grid(row=0, column=0, sticky=tk.W, padx=5, pady=5)
-            tk.Entry(form_frame, textvariable=self.site_var, width=25, bg=COLORS["entry_bg"], fg=COLORS["fg"]).grid(row=0, column=1, padx=5, pady=5)
+            tk.Entry(
+                form_frame, 
+                textvariable=self.site_var, 
+                width=25, 
+                bg=COLORS["entry_bg"], 
+                fg=COLORS["fg"],
+                insertbackground=COLORS["fg"],
+                relief=tk.FLAT,
+                borderwidth=0,
+            ).grid(row=0, column=1, padx=5, pady=5)
             
             # Логин
             tk.Label(form_frame, text="Логин:", bg=COLORS["bg"], fg=COLORS["fg"]).grid(row=0, column=2, sticky=tk.W, padx=5, pady=5)
-            tk.Entry(form_frame, textvariable=self.login_var, width=25, bg=COLORS["entry_bg"], fg=COLORS["fg"]).grid(row=0, column=3, padx=5, pady=5)
+            tk.Entry(
+                form_frame, 
+                textvariable=self.login_var, 
+                width=25, 
+                bg=COLORS["entry_bg"], 
+                fg=COLORS["fg"],
+                insertbackground=COLORS["fg"],
+                relief=tk.FLAT,
+                borderwidth=0,
+            ).grid(row=0, column=3, padx=5, pady=5)
             
             # Пароль
             tk.Label(form_frame, text="Пароль:", bg=COLORS["bg"], fg=COLORS["fg"]).grid(row=0, column=4, sticky=tk.W, padx=5, pady=5)
-            tk.Entry(form_frame, textvariable=self.password_var, width=25, show="•", bg=COLORS["entry_bg"], fg=COLORS["fg"]).grid(row=0, column=5, padx=5, pady=5)
+            tk.Entry(
+                form_frame, 
+                textvariable=self.password_var, 
+                width=25, 
+                show="•", 
+                bg=COLORS["entry_bg"], 
+                fg=COLORS["fg"],
+                insertbackground=COLORS["fg"],
+                relief=tk.FLAT,
+                borderwidth=0,
+            ).grid(row=0, column=5, padx=5, pady=5)
             
             # Индикатор надёжности
             strength_frame = tk.Frame(form_frame, bg=COLORS["bg"])
             strength_frame.grid(row=1, column=0, columnspan=6, sticky=tk.W, padx=5, pady=5)
             tk.Label(strength_frame, text="Надёжность:", bg=COLORS["bg"], fg=COLORS["fg"]).pack(side=tk.LEFT)
-            self.strength_bar = tk.Canvas(strength_frame, width=200, height=20, bg=COLORS["entry_bg"], highlightthickness=0)
+            self.strength_bar = tk.Canvas(strength_frame, width=200, height=20, bg=COLORS["entry_bg"], highlightthickness=0, highlightbackground=COLORS["entry_bg"])
             self.strength_bar.pack(side=tk.LEFT, padx=10)
             self.strength_label = tk.Label(strength_frame, text="—", bg=COLORS["bg"], fg=COLORS["fg"])
             self.strength_label.pack(side=tk.LEFT)
@@ -436,8 +535,13 @@ class PasswordManagerApp:
                     command=cmd,
                     bg=COLORS["button_bg"],
                     fg=COLORS["button_fg"],
+                    activebackground=COLORS["accent"],
+                    activeforeground=COLORS["bg"],
                     padx=10,
                     pady=5,
+                    relief=tk.FLAT,
+                    borderwidth=0,
+                    cursor="hand2",
                 ).pack(side=tk.LEFT, padx=3)
             
             btn_frame2 = tk.Frame(main, bg=COLORS["bg"])
@@ -459,20 +563,20 @@ class PasswordManagerApp:
                     command=cmd,
                     bg=COLORS["button_bg"],
                     fg=COLORS["button_fg"],
+                    activebackground=COLORS["accent"],
+                    activeforeground=COLORS["bg"],
                     padx=10,
                     pady=5,
+                    relief=tk.FLAT,
+                    borderwidth=0,
+                    cursor="hand2",
                 ).pack(side=tk.LEFT, padx=3)
             
             # ========== ТАБЛИЦА ==========
             table_frame = tk.Frame(main, bg=COLORS["bg"])
             table_frame.pack(fill=tk.BOTH, expand=True, pady=10)
             
-            columns = ("Сайт", "Логин", "Пароль", "Дата создания")
-            self.tree = tk.Frame(table_frame, bg=COLORS["tree_bg"])
-            self.tree.pack(fill=tk.BOTH, expand=True)
-            
-            # Используем Listbox вместо Treeview для простоты
-            scrollbar = tk.Scrollbar(table_frame)
+            scrollbar = tk.Scrollbar(table_frame, bg=COLORS["button_bg"], activebackground=COLORS["accent"])
             scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
             
             self.listbox = tk.Listbox(
@@ -480,15 +584,25 @@ class PasswordManagerApp:
                 bg=COLORS["tree_bg"],
                 fg=COLORS["tree_fg"],
                 yscrollcommand=scrollbar.set,
-                font=("Arial", 9),
+                font=("Courier", 9),
                 height=10,
+                relief=tk.FLAT,
+                borderwidth=0,
             )
             self.listbox.pack(fill=tk.BOTH, expand=True)
             scrollbar.config(command=self.listbox.yview)
             self.listbox.bind("<<ListboxSelect>>", self._on_listbox_select)
             
             # ========== СТАТИСТИКА ==========
-            stats_frame = tk.LabelFrame(main, text=" Статистика безопасности ", bg=COLORS["bg"], fg=COLORS["header"], font=("Arial", 10, "bold"))
+            stats_frame = tk.LabelFrame(
+                main, 
+                text=" Статистика безопасности ", 
+                bg=COLORS["bg"], 
+                fg=COLORS["header"], 
+                font=("Arial", 10, "bold"),
+                relief=tk.FLAT,
+                borderwidth=1,
+            )
             stats_frame.pack(fill=tk.X, pady=10)
             
             self.stats_label = tk.Label(stats_frame, text="", bg=COLORS["bg"], fg=COLORS["fg"])
@@ -535,7 +649,6 @@ class PasswordManagerApp:
         for storage_index, record in indexed_records:
             line = f"{record['site']:20} | {record['login']:20} | {record['created_at']}"
             self.listbox.insert(tk.END, line)
-            self.listbox.itemconfig(tk.END, {"bg": COLORS["tree_bg"]})
         
         records = [record for _, record in indexed_records]
         self._update_statistics(records)
@@ -684,7 +797,7 @@ class PasswordManagerApp:
             messagebox.showerror("Ошибка", str(error))
 
     def _generate_password_dialog(self) -> None:
-        """Генератор паролей."""
+        """Генератор паролей - ЧЁРНАЯ ТЕМА."""
         dialog = tk.Toplevel(self.root)
         dialog.title("Генератор паролей")
         dialog.geometry("380x300")
@@ -697,7 +810,19 @@ class PasswordManagerApp:
 
         length_var = tk.IntVar(value=16)
         tk.Label(frame, text="Длина (12–20):", bg=COLORS["bg"], fg=COLORS["fg"]).pack(anchor=tk.W)
-        tk.Scale(frame, from_=12, to=20, orient=tk.HORIZONTAL, variable=length_var, bg=COLORS["button_bg"], fg=COLORS["button_fg"]).pack(fill=tk.X, pady=5)
+        scale = tk.Scale(
+            frame, 
+            from_=12, 
+            to=20, 
+            orient=tk.HORIZONTAL, 
+            variable=length_var, 
+            bg=COLORS["button_bg"], 
+            fg=COLORS["button_fg"],
+            troughcolor=COLORS["entry_bg"],
+            highlightbackground=COLORS["bg"],
+            highlightthickness=0,
+        )
+        scale.pack(fill=tk.X, pady=5)
 
         lower_var = tk.BooleanVar(value=True)
         upper_var = tk.BooleanVar(value=True)
@@ -710,7 +835,17 @@ class PasswordManagerApp:
             ("Цифры", digits_var),
             ("Спецсимволы", special_var),
         ]:
-            tk.Checkbutton(frame, text=text, variable=var, bg=COLORS["bg"], fg=COLORS["fg"], selectcolor=COLORS["button_bg"]).pack(anchor=tk.W)
+            cb = tk.Checkbutton(
+                frame, 
+                text=text, 
+                variable=var, 
+                bg=COLORS["bg"], 
+                fg=COLORS["fg"],
+                selectcolor=COLORS["button_bg"],
+                activebackground=COLORS["bg"],
+                activeforeground=COLORS["accent"],
+            )
+            cb.pack(anchor=tk.W)
 
         result_var = tk.StringVar()
 
@@ -724,15 +859,51 @@ class PasswordManagerApp:
             )
             result_var.set(pwd)
 
-        tk.Button(frame, text="Сгенерировать", command=do_generate, bg=COLORS["button_bg"], fg=COLORS["button_fg"], padx=15, pady=5).pack(pady=8)
-        tk.Entry(frame, textvariable=result_var, width=40, bg=COLORS["entry_bg"], fg=COLORS["fg"]).pack(pady=5)
+        tk.Button(
+            frame, 
+            text="Сгенерировать", 
+            command=do_generate, 
+            bg=COLORS["button_bg"], 
+            fg=COLORS["button_fg"],
+            activebackground=COLORS["accent"],
+            activeforeground=COLORS["bg"],
+            padx=15, 
+            pady=5,
+            relief=tk.FLAT,
+            borderwidth=0,
+            cursor="hand2",
+        ).pack(pady=8)
+        
+        tk.Entry(
+            frame, 
+            textvariable=result_var, 
+            width=40, 
+            bg=COLORS["entry_bg"], 
+            fg=COLORS["fg"],
+            insertbackground=COLORS["fg"],
+            relief=tk.FLAT,
+            borderwidth=0,
+        ).pack(pady=5)
 
         def insert() -> None:
             if result_var.get():
                 self.password_var.set(result_var.get())
                 dialog.destroy()
 
-        tk.Button(frame, text="Вставить", command=insert, bg=COLORS["button_bg"], fg=COLORS["button_fg"], padx=15, pady=5).pack()
+        tk.Button(
+            frame, 
+            text="Вставить", 
+            command=insert, 
+            bg=COLORS["button_bg"], 
+            fg=COLORS["button_fg"],
+            activebackground=COLORS["accent"],
+            activeforeground=COLORS["bg"],
+            padx=15, 
+            pady=5,
+            relief=tk.FLAT,
+            borderwidth=0,
+            cursor="hand2",
+        ).pack()
         do_generate()
 
     def _create_backup(self) -> None:
@@ -840,7 +1011,7 @@ class PasswordManagerApp:
             messagebox.showerror("Ошибка", str(error))
 
     def _show_history(self) -> None:
-        """История действий."""
+        """История действий - ЧЁРНАЯ ТЕМА."""
         try:
             window = tk.Toplevel(self.root)
             window.title("История")
@@ -852,7 +1023,7 @@ class PasswordManagerApp:
 
             tk.Label(frame, text="История действий", font=("Arial", 12, "bold"), bg=COLORS["bg"], fg=COLORS["header"]).pack()
 
-            text = tk.Text(frame, bg=COLORS["entry_bg"], fg=COLORS["fg"], font=("Courier", 9), wrap=tk.WORD)
+            text = tk.Text(frame, bg=COLORS["entry_bg"], fg=COLORS["fg"], font=("Courier", 9), wrap=tk.WORD, relief=tk.FLAT, borderwidth=0)
             text.pack(fill=tk.BOTH, expand=True, pady=10)
 
             entries = app_logger.get_recent_entries(100)
@@ -862,7 +1033,7 @@ class PasswordManagerApp:
             app_logger.log_error(f"Ошибка истории: {error}")
 
     def _show_protection_info(self) -> None:
-        """О защите информации."""
+        """О защите информации - ЧЁРНАЯ ТЕМА."""
         try:
             window = tk.Toplevel(self.root)
             window.title("О защите информации")
@@ -874,7 +1045,7 @@ class PasswordManagerApp:
 
             tk.Label(frame, text="Виды защиты информации", font=("Arial", 12, "bold"), bg=COLORS["bg"], fg=COLORS["header"]).pack()
 
-            text = tk.Text(frame, bg=COLORS["entry_bg"], fg=COLORS["fg"], font=("Arial", 9), wrap=tk.WORD)
+            text = tk.Text(frame, bg=COLORS["entry_bg"], fg=COLORS["fg"], font=("Arial", 9), wrap=tk.WORD, relief=tk.FLAT, borderwidth=0)
             text.pack(fill=tk.BOTH, expand=True, pady=10)
 
             info = """ВИДЫ ЗАЩИТЫ ИНФОРМАЦИИ
